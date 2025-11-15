@@ -1,0 +1,541 @@
+<!doctype html>
+<html lang="en">
+ <head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Food Share Connect</title>
+  <script src="/_sdk/element_sdk.js"></script>
+  <script src="/_sdk/data_sdk.js"></script>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+        body {
+            box-sizing: border-box;
+        }
+        
+        .loading-spinner {
+            border: 3px solid #f3f4f6;
+            border-top: 3px solid #10b981;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .toast {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #10b981;
+            color: white;
+            padding: 12px 24px;
+            border-radius: 8px;
+            z-index: 1000;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+        }
+        
+        .toast.show {
+            transform: translateX(0);
+        }
+        
+        .toast.error {
+            background: #ef4444;
+        }
+    </style>
+  <style>@view-transition { navigation: auto; }</style>
+ </head>
+ <body class="min-h-full bg-gradient-to-br from-green-50 to-blue-50">
+  <main class="container mx-auto px-4 py-8 max-w-6xl"><!-- Header -->
+   <header class="text-center mb-12">
+    <div class="flex justify-center items-center mb-4">
+     <svg class="w-12 h-12 text-green-600 mr-3" fill="currentColor" viewbox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+     </svg>
+     <h1 id="app-title" class="text-4xl font-bold text-gray-800">Food Share Connect</h1>
+    </div>
+    <p id="app-subtitle" class="text-xl text-gray-600 mb-8">Connecting food donors with those in need</p><!-- Action Buttons -->
+    <div class="flex flex-col sm:flex-row gap-4 justify-center mb-8"><button id="donate-btn" class="bg-green-600 hover:bg-green-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors flex items-center justify-center">
+      <svg class="w-5 h-5 mr-2" fill="currentColor" viewbox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+      </svg><span id="donate-button-text">Donate Food</span> </button> <button id="request-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-8 py-3 rounded-lg font-semibold text-lg transition-colors flex items-center justify-center">
+      <svg class="w-5 h-5 mr-2" fill="currentColor" viewbox="0 0 24 24"><path d="M19 7h-3V6a4 4 0 0 0-8 0v1H5a1 1 0 0 0-1 1v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8a1 1 0 0 0-1-1zM10 6a2 2 0 0 1 4 0v1h-4V6zm8 13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V9h2v1a1 1 0 0 0 2 0V9h4v1a1 1 0 0 0 2 0V9h2v10z" />
+      </svg><span id="request-button-text">Request Food</span> </button>
+    </div>
+   </header><!-- Forms Section -->
+   <div id="forms-section" class="hidden"><!-- Donation Form -->
+    <div id="donation-form" class="bg-white rounded-xl shadow-lg p-8 mb-8 hidden">
+     <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+      <svg class="w-6 h-6 text-green-600 mr-2" fill="currentColor" viewbox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
+      </svg> Donate Food</h2>
+     <form id="donate-form">
+      <div class="grid md:grid-cols-2 gap-6">
+       <div><label for="donate-title" class="block text-sm font-medium text-gray-700 mb-2">Food Item Title</label> <input type="text" id="donate-title" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="e.g., Fresh vegetables, Cooked meals">
+       </div>
+       <div><label for="donate-quantity" class="block text-sm font-medium text-gray-700 mb-2">Quantity</label> <input type="text" id="donate-quantity" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="e.g., 5 portions, 2 bags">
+       </div>
+       <div class="md:col-span-2"><label for="donate-description" class="block text-sm font-medium text-gray-700 mb-2">Description</label> <textarea id="donate-description" required rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Describe the food items, dietary information, etc."></textarea>
+       </div>
+       <div><label for="donate-location" class="block text-sm font-medium text-gray-700 mb-2">Pickup Location</label> <input type="text" id="donate-location" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Address or general area">
+       </div>
+       <div><label for="donate-contact" class="block text-sm font-medium text-gray-700 mb-2">Contact Information</label> <input type="text" id="donate-contact" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent" placeholder="Phone or email">
+       </div>
+       <div><label for="donate-expiry" class="block text-sm font-medium text-gray-700 mb-2">Best Before Date</label> <input type="date" id="donate-expiry" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500 focus:border-transparent">
+       </div>
+      </div>
+      <div class="flex gap-4 mt-6"><button type="submit" class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors flex items-center"> <span class="loading-spinner hidden mr-2"></span> Post Donation </button> <button type="button" id="cancel-donate" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors">Cancel</button>
+      </div>
+     </form>
+    </div><!-- Request Form -->
+    <div id="request-form" class="bg-white rounded-xl shadow-lg p-8 mb-8 hidden">
+     <h2 class="text-2xl font-bold text-gray-800 mb-6 flex items-center">
+      <svg class="w-6 h-6 text-blue-600 mr-2" fill="currentColor" viewbox="0 0 24 24"><path d="M19 7h-3V6a4 4 0 0 0-8 0v1H5a1 1 0 0 0-1 1v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8a1 1 0 0 0-1-1zM10 6a2 2 0 0 1 4 0v1h-4V6zm8 13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V9h2v1a1 1 0 0 0 2 0V9h4v1a1 1 0 0 0 2 0V9h2v10z" />
+      </svg> Request Food</h2>
+     <form id="request-food-form">
+      <div class="grid md:grid-cols-2 gap-6">
+       <div><label for="request-title" class="block text-sm font-medium text-gray-700 mb-2">What do you need?</label> <input type="text" id="request-title" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., Meals for family, Fresh produce">
+       </div>
+       <div><label for="request-quantity" class="block text-sm font-medium text-gray-700 mb-2">Quantity Needed</label> <input type="text" id="request-quantity" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="e.g., 4 portions, 1 bag">
+       </div>
+       <div class="md:col-span-2"><label for="request-description" class="block text-sm font-medium text-gray-700 mb-2">Additional Details</label> <textarea id="request-description" required rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Any dietary restrictions, urgency, or other details"></textarea>
+       </div>
+       <div><label for="request-location" class="block text-sm font-medium text-gray-700 mb-2">Your Location</label> <input type="text" id="request-location" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Address or general area">
+       </div>
+       <div><label for="request-contact" class="block text-sm font-medium text-gray-700 mb-2">Contact Information</label> <input type="text" id="request-contact" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent" placeholder="Phone or email">
+       </div>
+      </div>
+      <div class="flex gap-4 mt-6"><button type="submit" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition-colors flex items-center"> <span class="loading-spinner hidden mr-2"></span> Post Request </button> <button type="button" id="cancel-request" class="bg-gray-500 hover:bg-gray-600 text-white px-6 py-2 rounded-lg font-semibold transition-colors">Cancel</button>
+      </div>
+     </form>
+    </div>
+   </div><!-- Listings Section -->
+   <section class="mb-12">
+    <div class="flex justify-between items-center mb-6">
+     <h2 class="text-2xl font-bold text-gray-800">Recent Listings</h2>
+     <div class="flex gap-2"><button id="filter-donations" class="px-4 py-2 bg-green-100 text-green-700 rounded-lg font-medium hover:bg-green-200 transition-colors">Donations</button> <button id="filter-requests" class="px-4 py-2 bg-blue-100 text-blue-700 rounded-lg font-medium hover:bg-blue-200 transition-colors">Requests</button> <button id="filter-all" class="px-4 py-2 bg-gray-100 text-gray-700 rounded-lg font-medium hover:bg-gray-200 transition-colors">All</button>
+     </div>
+    </div>
+    <div id="listings-container" class="grid md:grid-cols-2 lg:grid-cols-3 gap-6"><!-- Listings will be populated here -->
+    </div>
+    <div id="no-listings" class="text-center py-12 hidden">
+     <svg class="w-16 h-16 text-gray-400 mx-auto mb-4" fill="currentColor" viewbox="0 0 24 24"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z" />
+     </svg>
+     <h3 class="text-xl font-semibold text-gray-600 mb-2">No listings yet</h3>
+     <p class="text-gray-500">Be the first to donate or request food!</p>
+    </div>
+   </section>
+  </main>
+  <script>
+        // Configuration
+        const defaultConfig = {
+            app_title: "Food Share Connect",
+            app_subtitle: "Connecting food donors with those in need",
+            donate_button_text: "Donate Food",
+            request_button_text: "Request Food",
+            background_color: "#f0fdf4",
+            surface_color: "#ffffff",
+            text_color: "#1f2937",
+            primary_action_color: "#10b981",
+            secondary_action_color: "#3b82f6"
+        };
+
+        let currentData = [];
+        let currentFilter = 'all';
+
+        // Data handler for SDK
+        const dataHandler = {
+            onDataChanged(data) {
+                currentData = data;
+                renderListings();
+            }
+        };
+
+        // Initialize SDKs
+        async function initializeApp() {
+            if (window.elementSdk) {
+                await window.elementSdk.init({
+                    defaultConfig,
+                    onConfigChange: async (config) => {
+                        // Update app title and subtitle
+                        const titleEl = document.getElementById('app-title');
+                        const subtitleEl = document.getElementById('app-subtitle');
+                        const donateTextEl = document.getElementById('donate-button-text');
+                        const requestTextEl = document.getElementById('request-button-text');
+                        
+                        if (titleEl) titleEl.textContent = config.app_title || defaultConfig.app_title;
+                        if (subtitleEl) subtitleEl.textContent = config.app_subtitle || defaultConfig.app_subtitle;
+                        if (donateTextEl) donateTextEl.textContent = config.donate_button_text || defaultConfig.donate_button_text;
+                        if (requestTextEl) requestTextEl.textContent = config.request_button_text || defaultConfig.request_button_text;
+                        
+                        // Apply colors
+                        const bgColor = config.background_color || defaultConfig.background_color;
+                        const surfaceColor = config.surface_color || defaultConfig.surface_color;
+                        const textColor = config.text_color || defaultConfig.text_color;
+                        const primaryColor = config.primary_action_color || defaultConfig.primary_action_color;
+                        const secondaryColor = config.secondary_action_color || defaultConfig.secondary_action_color;
+                        
+                        document.body.style.background = `linear-gradient(to bottom right, ${bgColor}, #eff6ff)`;
+                        
+                        // Update surface colors
+                        const surfaces = document.querySelectorAll('.bg-white');
+                        surfaces.forEach(el => el.style.backgroundColor = surfaceColor);
+                        
+                        // Update text colors
+                        const textElements = document.querySelectorAll('.text-gray-800, .text-gray-700, .text-gray-600');
+                        textElements.forEach(el => el.style.color = textColor);
+                        
+                        // Update primary buttons
+                        const primaryBtns = document.querySelectorAll('.bg-green-600');
+                        primaryBtns.forEach(el => {
+                            el.style.backgroundColor = primaryColor;
+                            el.addEventListener('mouseenter', () => el.style.backgroundColor = adjustBrightness(primaryColor, -20));
+                            el.addEventListener('mouseleave', () => el.style.backgroundColor = primaryColor);
+                        });
+                        
+                        // Update secondary buttons
+                        const secondaryBtns = document.querySelectorAll('.bg-blue-600');
+                        secondaryBtns.forEach(el => {
+                            el.style.backgroundColor = secondaryColor;
+                            el.addEventListener('mouseenter', () => el.style.backgroundColor = adjustBrightness(secondaryColor, -20));
+                            el.addEventListener('mouseleave', () => el.style.backgroundColor = secondaryColor);
+                        });
+                    },
+                    mapToCapabilities: (config) => ({
+                        recolorables: [
+                            {
+                                get: () => config.background_color || defaultConfig.background_color,
+                                set: (value) => {
+                                    if (window.elementSdk) {
+                                        window.elementSdk.setConfig({ background_color: value });
+                                    }
+                                }
+                            },
+                            {
+                                get: () => config.surface_color || defaultConfig.surface_color,
+                                set: (value) => {
+                                    if (window.elementSdk) {
+                                        window.elementSdk.setConfig({ surface_color: value });
+                                    }
+                                }
+                            },
+                            {
+                                get: () => config.text_color || defaultConfig.text_color,
+                                set: (value) => {
+                                    if (window.elementSdk) {
+                                        window.elementSdk.setConfig({ text_color: value });
+                                    }
+                                }
+                            },
+                            {
+                                get: () => config.primary_action_color || defaultConfig.primary_action_color,
+                                set: (value) => {
+                                    if (window.elementSdk) {
+                                        window.elementSdk.setConfig({ primary_action_color: value });
+                                    }
+                                }
+                            },
+                            {
+                                get: () => config.secondary_action_color || defaultConfig.secondary_action_color,
+                                set: (value) => {
+                                    if (window.elementSdk) {
+                                        window.elementSdk.setConfig({ secondary_action_color: value });
+                                    }
+                                }
+                            }
+                        ],
+                        borderables: [],
+                        fontEditable: undefined,
+                        fontSizeable: undefined
+                    }),
+                    mapToEditPanelValues: (config) => new Map([
+                        ["app_title", config.app_title || defaultConfig.app_title],
+                        ["app_subtitle", config.app_subtitle || defaultConfig.app_subtitle],
+                        ["donate_button_text", config.donate_button_text || defaultConfig.donate_button_text],
+                        ["request_button_text", config.request_button_text || defaultConfig.request_button_text]
+                    ])
+                });
+            }
+
+            if (window.dataSdk) {
+                const result = await window.dataSdk.init(dataHandler);
+                if (!result.isOk) {
+                    showToast('Failed to initialize app', 'error');
+                }
+            }
+        }
+
+        // Utility function to adjust color brightness
+        function adjustBrightness(hex, percent) {
+            const num = parseInt(hex.replace("#", ""), 16);
+            const amt = Math.round(2.55 * percent);
+            const R = (num >> 16) + amt;
+            const G = (num >> 8 & 0x00FF) + amt;
+            const B = (num & 0x0000FF) + amt;
+            return "#" + (0x1000000 + (R < 255 ? R < 1 ? 0 : R : 255) * 0x10000 +
+                (G < 255 ? G < 1 ? 0 : G : 255) * 0x100 +
+                (B < 255 ? B < 1 ? 0 : B : 255)).toString(16).slice(1);
+        }
+
+        // Show toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.createElement('div');
+            toast.className = `toast ${type}`;
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            setTimeout(() => toast.classList.add('show'), 100);
+            setTimeout(() => {
+                toast.classList.remove('show');
+                setTimeout(() => document.body.removeChild(toast), 300);
+            }, 3000);
+        }
+
+        // Show/hide loading state
+        function setLoading(button, isLoading) {
+            const spinner = button.querySelector('.loading-spinner');
+            if (isLoading) {
+                spinner.classList.remove('hidden');
+                button.disabled = true;
+            } else {
+                spinner.classList.add('hidden');
+                button.disabled = false;
+            }
+        }
+
+        // Event listeners
+        document.getElementById('donate-btn').addEventListener('click', () => {
+            document.getElementById('forms-section').classList.remove('hidden');
+            document.getElementById('donation-form').classList.remove('hidden');
+            document.getElementById('request-form').classList.add('hidden');
+        });
+
+        document.getElementById('request-btn').addEventListener('click', () => {
+            document.getElementById('forms-section').classList.remove('hidden');
+            document.getElementById('request-form').classList.remove('hidden');
+            document.getElementById('donation-form').classList.add('hidden');
+        });
+
+        document.getElementById('cancel-donate').addEventListener('click', () => {
+            document.getElementById('forms-section').classList.add('hidden');
+            document.getElementById('donate-form').reset();
+        });
+
+        document.getElementById('cancel-request').addEventListener('click', () => {
+            document.getElementById('forms-section').classList.add('hidden');
+            document.getElementById('request-food-form').reset();
+        });
+
+        // Form submissions
+        document.getElementById('donate-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (currentData.length >= 999) {
+                showToast('Maximum limit of 999 listings reached. Please delete some items first.', 'error');
+                return;
+            }
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            setLoading(submitBtn, true);
+            
+            const formData = new FormData(e.target);
+            const donation = {
+                id: Date.now().toString(),
+                type: 'donation',
+                title: document.getElementById('donate-title').value,
+                description: document.getElementById('donate-description').value,
+                quantity: document.getElementById('donate-quantity').value,
+                location: document.getElementById('donate-location').value,
+                contact: document.getElementById('donate-contact').value,
+                expiry: document.getElementById('donate-expiry').value,
+                status: 'available',
+                createdAt: new Date().toISOString()
+            };
+            
+            if (window.dataSdk) {
+                const result = await window.dataSdk.create(donation);
+                if (result.isOk) {
+                    showToast('Donation posted successfully!');
+                    document.getElementById('forms-section').classList.add('hidden');
+                    e.target.reset();
+                } else {
+                    showToast('Failed to post donation. Please try again.', 'error');
+                }
+            }
+            
+            setLoading(submitBtn, false);
+        });
+
+        document.getElementById('request-food-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            if (currentData.length >= 999) {
+                showToast('Maximum limit of 999 listings reached. Please delete some items first.', 'error');
+                return;
+            }
+            
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            setLoading(submitBtn, true);
+            
+            const request = {
+                id: Date.now().toString(),
+                type: 'request',
+                title: document.getElementById('request-title').value,
+                description: document.getElementById('request-description').value,
+                quantity: document.getElementById('request-quantity').value,
+                location: document.getElementById('request-location').value,
+                contact: document.getElementById('request-contact').value,
+                expiry: '',
+                status: 'active',
+                createdAt: new Date().toISOString()
+            };
+            
+            if (window.dataSdk) {
+                const result = await window.dataSdk.create(request);
+                if (result.isOk) {
+                    showToast('Request posted successfully!');
+                    document.getElementById('forms-section').classList.add('hidden');
+                    e.target.reset();
+                } else {
+                    showToast('Failed to post request. Please try again.', 'error');
+                }
+            }
+            
+            setLoading(submitBtn, false);
+        });
+
+        // Filter buttons
+        document.getElementById('filter-donations').addEventListener('click', () => {
+            currentFilter = 'donation';
+            renderListings();
+            updateFilterButtons();
+        });
+
+        document.getElementById('filter-requests').addEventListener('click', () => {
+            currentFilter = 'request';
+            renderListings();
+            updateFilterButtons();
+        });
+
+        document.getElementById('filter-all').addEventListener('click', () => {
+            currentFilter = 'all';
+            renderListings();
+            updateFilterButtons();
+        });
+
+        function updateFilterButtons() {
+            const buttons = {
+                'donation': document.getElementById('filter-donations'),
+                'request': document.getElementById('filter-requests'),
+                'all': document.getElementById('filter-all')
+            };
+            
+            Object.entries(buttons).forEach(([type, btn]) => {
+                if (type === currentFilter) {
+                    btn.classList.add('bg-gray-800', 'text-white');
+                    btn.classList.remove('bg-green-100', 'text-green-700', 'bg-blue-100', 'text-blue-700', 'bg-gray-100', 'text-gray-700');
+                } else {
+                    btn.classList.remove('bg-gray-800', 'text-white');
+                    if (type === 'donation') {
+                        btn.classList.add('bg-green-100', 'text-green-700');
+                    } else if (type === 'request') {
+                        btn.classList.add('bg-blue-100', 'text-blue-700');
+                    } else {
+                        btn.classList.add('bg-gray-100', 'text-gray-700');
+                    }
+                }
+            });
+        }
+
+        // Render listings
+        function renderListings() {
+            const container = document.getElementById('listings-container');
+            const noListings = document.getElementById('no-listings');
+            
+            let filteredData = currentData;
+            if (currentFilter !== 'all') {
+                filteredData = currentData.filter(item => item.type === currentFilter);
+            }
+            
+            if (filteredData.length === 0) {
+                container.innerHTML = '';
+                noListings.classList.remove('hidden');
+                return;
+            }
+            
+            noListings.classList.add('hidden');
+            
+            // Sort by creation date (newest first)
+            filteredData.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+            
+            container.innerHTML = filteredData.map(item => createListingCard(item)).join('');
+        }
+
+        function createListingCard(item) {
+            const isDonation = item.type === 'donation';
+            const cardColor = isDonation ? 'border-green-200 bg-green-50' : 'border-blue-200 bg-blue-50';
+            const badgeColor = isDonation ? 'bg-green-100 text-green-800' : 'bg-blue-100 text-blue-800';
+            const iconColor = isDonation ? 'text-green-600' : 'text-blue-600';
+            const icon = isDonation ? 
+                '<path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/>' :
+                '<path d="M19 7h-3V6a4 4 0 0 0-8 0v1H5a1 1 0 0 0-1 1v11a3 3 0 0 0 3 3h10a3 3 0 0 0 3-3V8a1 1 0 0 0-1-1zM10 6a2 2 0 0 1 4 0v1h-4V6zm8 13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V9h2v1a1 1 0 0 0 2 0V9h4v1a1 1 0 0 0 2 0V9h2v10z"/>';
+            
+            const createdDate = new Date(item.createdAt).toLocaleDateString();
+            const expiryInfo = item.expiry ? `<p class="text-sm text-gray-600 mb-2"><strong>Best before:</strong> ${new Date(item.expiry).toLocaleDateString()}</p>` : '';
+            
+            return `
+                <div class="bg-white rounded-lg shadow-md border-2 ${cardColor} p-6 hover:shadow-lg transition-shadow">
+                    <div class="flex justify-between items-start mb-4">
+                        <div class="flex items-center">
+                            <svg class="w-5 h-5 ${iconColor} mr-2" fill="currentColor" viewBox="0 0 24 24">
+                                ${icon}
+                            </svg>
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full ${badgeColor}">
+                                ${isDonation ? 'Donation' : 'Request'}
+                            </span>
+                        </div>
+                        <button onclick="deleteItem('${item.__backendId}')" class="text-red-500 hover:text-red-700 transition-colors">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/>
+                            </svg>
+                        </button>
+                    </div>
+                    
+                    <h3 class="text-lg font-semibold text-gray-800 mb-2">${item.title}</h3>
+                    <p class="text-gray-600 mb-3">${item.description}</p>
+                    
+                    <div class="space-y-2 text-sm text-gray-600">
+                        <p><strong>Quantity:</strong> ${item.quantity}</p>
+                        <p><strong>Location:</strong> ${item.location}</p>
+                        <p><strong>Contact:</strong> ${item.contact}</p>
+                        ${expiryInfo}
+                        <p class="text-xs text-gray-500">Posted: ${createdDate}</p>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Delete item function
+        async function deleteItem(backendId) {
+            const item = currentData.find(item => item.__backendId === backendId);
+            if (!item) return;
+            
+            if (window.dataSdk) {
+                const result = await window.dataSdk.delete(item);
+                if (result.isOk) {
+                    showToast('Item deleted successfully!');
+                } else {
+                    showToast('Failed to delete item. Please try again.', 'error');
+                }
+            }
+        }
+
+        // Make deleteItem available globally
+        window.deleteItem = deleteItem;
+
+        // Initialize app when page loads
+        document.addEventListener('DOMContentLoaded', initializeApp);
+    </script>
+ <script>(function(){function c(){var b=a.contentDocument||a.contentWindow.document;if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'99eefc57d2df7629',t:'MTc2MzIxMjE5NS4wMDAwMDA='};var a=document.createElement('script');a.nonce='';a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>
